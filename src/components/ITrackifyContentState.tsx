@@ -4,6 +4,7 @@ export default interface ITrackifyContentState {
     longestSong: string,
     shortestSong: string,
     totalTimeListened: string,
+    trackPlayData: any[],
     trackPlaySum: number,
     uniqueTrackPlaySum: number
 }

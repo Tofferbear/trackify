@@ -1,14 +1,15 @@
-import React from 'react';
-import TrackifyBusinessLogic from './TrackifyBusinessLogic';
-import ITrackifyContentProps from './ITrackifyContentProps';
-import ITrackifyContentState from './ITrackifyContentState';
-import CollapsibleContainer from '../submodules/react-container-components/components/CollapsibleContainer';
-import TrackPlayMetadata from './TrackPlayMetadata';
+import React from "react";
+import TrackifyBusinessLogic from "./TrackifyBusinessLogic";
+import ITrackifyContentProps from "./ITrackifyContentProps";
+import ITrackifyContentState from "./ITrackifyContentState";
+import CollapsibleContainer from "../submodules/react-container-components/components/CollapsibleContainer";
+import TrackPlayMetadata from "./TrackPlayMetadata";
+import TrackPlayTable from "./TrackPlayTable";
 
 export default class TrackifyContent extends React.Component<ITrackifyContentProps, ITrackifyContentState> {
     private businessLogic: TrackifyBusinessLogic;
 
-    constructor(props: any) {
+    constructor(props: ITrackifyContentProps) {
         super(props);
 
         this.state = {
@@ -17,6 +18,7 @@ export default class TrackifyContent extends React.Component<ITrackifyContentPro
             longestSong: "",
             shortestSong: "",
             totalTimeListened: "",
+            trackPlayData: [],
             trackPlaySum: 0,
             uniqueTrackPlaySum: 0
         }
@@ -31,6 +33,7 @@ export default class TrackifyContent extends React.Component<ITrackifyContentPro
             longestSong: await this.businessLogic.getLongestSong(),
             shortestSong: await this.businessLogic.getShortestSong(),
             totalTimeListened: await this.businessLogic.getTotalTimeListened(),
+            trackPlayData: await this.businessLogic.getTrackPlayCounts(),
             trackPlaySum: await this.businessLogic.getTrackPlaySum(),
             uniqueTrackPlaySum: await this.businessLogic.getUniqueTrackPlaySum()
         });
@@ -38,20 +41,25 @@ export default class TrackifyContent extends React.Component<ITrackifyContentPro
 
     render() {
         return (
-            <CollapsibleContainer
-                enableCollapse={true}
-                label={"Trackify - Spotify Metrics Tracking"}
-            >
-                <TrackPlayMetadata
-                    artistWithMostPlays={this.state.artistWithMostPlays}
-                    avgSongLength={this.state.avgSongLength}
-                    longestSong={this.state.longestSong}
-                    shortestSong={this.state.shortestSong}
-                    totalTimeListened={this.state.totalTimeListened}
-                    trackPlaySum={this.state.trackPlaySum}
-                    uniqueTrackPlaySum={this.state.uniqueTrackPlaySum}
+            <div>
+                <CollapsibleContainer
+                    enableCollapse={true}
+                    label={"Trackify - Spotify Metrics Tracking"}
+                >
+                    <TrackPlayMetadata
+                        artistWithMostPlays={this.state.artistWithMostPlays}
+                        avgSongLength={this.state.avgSongLength}
+                        longestSong={this.state.longestSong}
+                        shortestSong={this.state.shortestSong}
+                        totalTimeListened={this.state.totalTimeListened}
+                        trackPlaySum={this.state.trackPlaySum}
+                        uniqueTrackPlaySum={this.state.uniqueTrackPlaySum}
+                    />
+                </CollapsibleContainer>
+                <TrackPlayTable
+                    trackPlayData={this.state.trackPlayData}
                 />
-            </CollapsibleContainer>
+            </div>
         );
     }
 }

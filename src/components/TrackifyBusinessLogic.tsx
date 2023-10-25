@@ -113,6 +113,14 @@ export default class TrackifyBusinessLogic {
             return trackPlayCounts;
         }
 
+        playCountDataJson.map((track: { name: string, album: any, duration_ms: number, play_count: number }) => {
+            trackPlayCounts.push({
+                trackTitle: track.name,
+                artistName: track.album.artists.map((artist: { name: string; }) => artist.name).join(", "),
+                trackLength: track.duration_ms,
+                playCount: track.play_count
+            });
+        });
 
         return trackPlayCounts;
     }
