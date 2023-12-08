@@ -1,1 +1,3 @@
-export default interface IArtistPlayTableProps {}
+export default interface IArtistPlayTableProps {
+    artistPlayData: any[];
+}

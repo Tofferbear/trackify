@@ -1,4 +1,10 @@
 export default class TrackifyBusinessLogic {
+    async convertMsToSongLength(songLengthInMs: number): Promise<string> {
+        const dateTimeFromMs = new Date(songLengthInMs);
+
+        return `${dateTimeFromMs.getUTCHours()}h : ${dateTimeFromMs.getUTCMinutes()}m : ${dateTimeFromMs.getUTCSeconds()}s`;
+    }
+
     async getPlayCountJsonAsync(): Promise<any> {
         let playCountDataJson: any = {};
 
@@ -22,10 +28,10 @@ export default class TrackifyBusinessLogic {
             for (let artistIndex = 0; artistIndex < playCountDataJson[trackIndex].album.artists.length; artistIndex++) {
                 const artistName = playCountDataJson[trackIndex].album.artists[artistIndex].name;
                 if (artistPlayCounts.hasOwnProperty(artistName)) {
-                    artistPlayCounts[artistName].playCounts++;
+                    artistPlayCounts[artistName].playCounts += playCountDataJson[trackIndex].play_count;
                 } else {
                     artistPlayCounts[artistName] = {
-                        playCounts: 1
+                        playCounts: playCountDataJson[trackIndex].play_count
                     }
                 }
             }
@@ -53,9 +59,8 @@ export default class TrackifyBusinessLogic {
         }
 
         const avgSongLength = (playCountDataJson.reduce((sum: number, item: { duration_ms: number, play_count: number }) => sum + (item.duration_ms * item.play_count), 0) / await this.getTrackPlaySum());
-        const dateTimeFromMs = new Date(avgSongLength);
 
-        return `${dateTimeFromMs.getUTCHours()}h : ${dateTimeFromMs.getUTCMinutes()}m : ${dateTimeFromMs.getUTCSeconds()}s`;
+        return await this.convertMsToSongLength(avgSongLength);
     }
 
     async getLongestSong(): Promise<string> {
@@ -67,7 +72,7 @@ export default class TrackifyBusinessLogic {
 
         const maxLengthSong = playCountDataJson.reduce((prev: any, current: any) => (prev.duration_ms > current.duration_ms) ? prev : current);
         const dateTimeFromMs = new Date(maxLengthSong.duration_ms);
-       
+
         return `${maxLengthSong.name} (${dateTimeFromMs.getUTCHours()}h : ${dateTimeFromMs.getUTCMinutes()}m : ${dateTimeFromMs.getUTCSeconds()}s)`;
     }
 
@@ -80,7 +85,7 @@ export default class TrackifyBusinessLogic {
 
         const minLengthSong = playCountDataJson.reduce((prev: any, current: any) => (prev.duration_ms < current.duration_ms) ? prev : current);
         const dateTimeFromMs = new Date(minLengthSong.duration_ms);
-       
+
         return `${minLengthSong.name} (${dateTimeFromMs.getUTCHours()}h : ${dateTimeFromMs.getUTCMinutes()}m : ${dateTimeFromMs.getUTCSeconds()}s)`;
     }
 
@@ -107,22 +112,78 @@ export default class TrackifyBusinessLogic {
 
     async getTrackPlayCounts(): Promise<any[]> {
         const trackPlayCounts: any[] = [];
-        const playCountDataJson = await this.getPlayCountJsonAsync();
+        const playCountDataJson = (await this.getPlayCountJsonAsync())
+            .sort((a: { play_count: number; }, b: { play_count: number; }) => b.play_count - a.play_count);
 
         if (!playCountDataJson.hasOwnProperty("length")) {
             return trackPlayCounts;
         }
 
-        playCountDataJson.map((track: { name: string, album: any, duration_ms: number, play_count: number }) => {
+        playCountDataJson.map(async (track: { name: string, album: any, duration_ms: number, play_count: number }) => {
             trackPlayCounts.push({
                 trackTitle: track.name,
                 artistName: track.album.artists.map((artist: { name: string; }) => artist.name).join(", "),
-                trackLength: track.duration_ms,
+                trackLength: await this.convertMsToSongLength(track.duration_ms),
                 playCount: track.play_count
             });
         });
 
         return trackPlayCounts;
+    }
+
+    async getArtistPlayCounts(): Promise<any[]> {
+        const artistPlayCounts: any[] = [];
+        const playCountDataJson = (await this.getPlayCountJsonAsync());
+    
+        if (!playCountDataJson.hasOwnProperty("length")) {
+            return artistPlayCounts;
+        }
+    
+        const artistPlayCountData: any[] = [];
+    
+        for (let trackIndex = 0; trackIndex < playCountDataJson.length; trackIndex++) {
+            for (let artistIndex = 0; artistIndex < playCountDataJson[trackIndex].album.artists.length; artistIndex++) {
+                const artistName = playCountDataJson[trackIndex].album.artists[artistIndex].name.trim();
+    
+                const artistPlayCountIndex = artistPlayCountData.findIndex((artistPlayCount: any) => artistPlayCount.artistName === artistName);
+    
+                if (artistPlayCountIndex !== -1) {
+                    artistPlayCountData[artistPlayCountIndex].playCounts += playCountDataJson[trackIndex].play_count;
+                } else {
+                    artistPlayCountData.push({
+                        artistName: artistName,
+                        playCounts: playCountDataJson[trackIndex].play_count
+                    });
+                }
+            }
+        }
+    
+        const sortedArtistPlayCountData = artistPlayCountData.sort((a: any, b: any) => {
+            if (b.playCounts !== a.playCounts) {
+                return b.playCounts - a.playCounts;
+            } else {
+                const artistNameANumeric = parseInt(a.artistName);
+                const artistNameBNumeric = parseInt(b.artistName);
+                if (!isNaN(artistNameANumeric) && !isNaN(artistNameBNumeric)) {
+                    return artistNameANumeric - artistNameBNumeric;
+                } else if (!isNaN(artistNameANumeric) && isNaN(artistNameBNumeric)) {
+                    return -1;
+                } else if (isNaN(artistNameANumeric) && !isNaN(artistNameBNumeric)) {
+                    return 1;
+                } else {
+                    return a.artistName.localeCompare(b.artistName, undefined, { numeric: true, sensitivity: 'base' });
+                }
+            }
+        });
+    
+        sortedArtistPlayCountData.map((artistPlayCount: any) => {
+            artistPlayCounts.push({
+                artistName: artistPlayCount.artistName,
+                playCount: artistPlayCount.playCounts
+            });
+        });
+    
+        return artistPlayCounts;
     }
 
     async getTrackPlaySum(): Promise<number> {

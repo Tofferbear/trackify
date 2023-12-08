@@ -1,4 +1,5 @@
 export default interface ITrackifyContentState {
+    artistPlayData: any[],
     artistWithMostPlays: string,
     avgSongLength: string,
     longestSong: string,

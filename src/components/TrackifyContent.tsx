@@ -5,6 +5,7 @@ import ITrackifyContentState from "./ITrackifyContentState";
 import CollapsibleContainer from "../submodules/react-container-components/components/CollapsibleContainer";
 import TrackPlayMetadata from "./TrackPlayMetadata";
 import TrackPlayTable from "./TrackPlayTable";
+import ArtistPlayTable from "./ArtistPlayTable";
 
 export default class TrackifyContent extends React.Component<ITrackifyContentProps, ITrackifyContentState> {
     private businessLogic: TrackifyBusinessLogic;
@@ -13,6 +14,7 @@ export default class TrackifyContent extends React.Component<ITrackifyContentPro
         super(props);
 
         this.state = {
+            artistPlayData: [],
             artistWithMostPlays: "",
             avgSongLength: "",
             longestSong: "",
@@ -28,6 +30,7 @@ export default class TrackifyContent extends React.Component<ITrackifyContentPro
 
     async componentDidMount(): Promise<void> {
         this.setState({
+            artistPlayData: await this.businessLogic.getArtistPlayCounts(),
             artistWithMostPlays: await this.businessLogic.getArtistWithMostPlays(),
             avgSongLength: await this.businessLogic.getAvgSongLength(),
             longestSong: await this.businessLogic.getLongestSong(),
@@ -58,6 +61,9 @@ export default class TrackifyContent extends React.Component<ITrackifyContentPro
                 </CollapsibleContainer>
                 <TrackPlayTable
                     trackPlayData={this.state.trackPlayData}
+                />
+                <ArtistPlayTable
+                    artistPlayData={this.state.artistPlayData}
                 />
             </div>
         );
